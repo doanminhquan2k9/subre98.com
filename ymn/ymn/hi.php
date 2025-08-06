@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spam Webhook Discord</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            danger: '#ef4444',
+            success: '#10b981',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex items-center justify-center min-h-screen px-4">
+
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-md transition-all duration-500">
+    <h1 class="text-3xl font-extrabold text-center mb-6">💬 Spam Webhook Discord</h1>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1">🔗 URL Webhook</label>
+        <input type="text" id="webhook-url" placeholder="https://discord.com/api/webhooks/..." 
+          class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"/>
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">✍️ Nội dung tin nhắn</label>
+        <textarea id="message" rows="3" placeholder="Nội dung spam..."
+          class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">🧑 Tên hiển thị (username)</label>
+        <input type="text" id="username" placeholder="Webhook Bot"
+          class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"/>
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">🖼️ Ảnh avatar (URL)</label>
+        <input type="text" id="avatar" placeholder="https://i.imgur.com/AfFp7pu.png"
+          class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"/>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="startSpam()" class="w-1/2 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold transition">🚀 Bắt đầu</button>
+        <button onclick="stopSpam()" class="w-1/2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition">🛑 Dừng lại</button>
+      </div>
+
+      <div id="status" class="text-center text-sm mt-2"></div>
+      <div class="text-xs text-center text-red-400 dark:text-red-300">⚠️ Đừng chia sẻ URL webhook công khai!</div>
+      <div id="timer" class="text-center text-sm text-blue-400 mt-1"></div>
+    </div>
+  </div>
+
+  <script>
+    let spamInterval;
+    let timerInterval;
+    let seconds = 0;
+
+    function startSpam() {
+      const webhookURL = document.getElementById('webhook-url').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const username = document.getElementById('username').value.trim() || 'Webhook Bot';
+      const avatar = document.getElementById('avatar').value.trim() || 'https://i.imgur.com/AfFp7pu.png';
+      const status = document.getElementById('status');
+      const timer = document.getElementById('timer');
+
+      if (!webhookURL || !message) {
+        status.textContent = '❌ Nhập URL webhook và nội dung tin nhắn!';
+        status.className = 'text-center text-sm text-red-500';
+        return;
+      }
+
+      if (!webhookURL.startsWith('https://discord.com/api/webhooks/')) {
+        status.textContent = '❌ URL webhook không hợp lệ!';
+        status.className = 'text-center text-sm text-red-500';
+        return;
+      }
+
+      status.textContent = '📡 Đang spam...';
+      status.className = 'text-center text-sm text-blue-500';
+      seconds = 0;
+
+      timerInterval = setInterval(() => {
+        seconds++;
+        timer.textContent = `⏱️ Thời gian spam: ${formatTime(seconds)}`;
+      }, 1000);
+
+      spamInterval = setInterval(() => {
+        fetch(webhookURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: message,
+            username: username,
+            avatar_url: avatar
+          })
+        }).catch(() => {
+          status.textContent = '⚠️ Gửi thất bại! Webhook có thể đã bị giới hạn.';
+          status.className = 'text-center text-sm text-red-500';
+        });
+      }, 500); // 500ms giữa mỗi lần gửi
+    }
+
+    function stopSpam() {
+      clearInterval(spamInterval);
+      clearInterval(timerInterval);
+      const status = document.getElementById('status');
+      const timer = document.getElementById('timer');
+      status.textContent = '✅ Đã dừng spam.';
+      status.className = 'text-center text-sm text-green-500';
+      timer.textContent = '';
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = (seconds % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+  </script>
+</body>
+</html>
